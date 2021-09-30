@@ -1,0 +1,15 @@
+[
+  {
+    "title": "@@org.joget.marketplace.DatabaseQueryProcessTool.config@@",
+    "properties": [
+      {
+        "name": "query",
+        "label": "@@org.joget.marketplace.DatabaseQueryProcessTool.query@@",
+        "type" : "codeeditor",
+        "mode" : "sql",
+        "required" : "True",
+        "description" : "@@org.joget.marketplace.DatabaseQueryProcessTool.config.query.desc@@"
+      }
+    ]
+  }
+]
