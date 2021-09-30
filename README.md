@@ -1,6 +1,6 @@
 # Description
 
-This repository is meant to serve as a general template for how to set up new repositories in the JogetOSS organization. 
+This is a process tool plugin to allow one to iterate through records/assignments to execute process tool plugin. When iterating through individual record/assignment, the target process tool will be set to record/assigment context. This enables the use of hash variables under the correct context.
 
 # Getting Help
 
