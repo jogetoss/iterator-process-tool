@@ -1,6 +1,6 @@
 # Description
 
-This is a process tool plugin to allow one to iterate through records/assignments to execute process tool plugin. When iterating through individual record/assignment, the target process tool will be set to record/assigment context. This enables the use of hash variables under the correct context.
+This is a process tool plugin to allow one to iterate through records/assignments to execute process tool plugin. When iterating through individual record/assignment, the target process tool will be set to record/assigment context. This enables the use of hash variables under the correct context. See documentation at https://dev.joget.org/community/display/marketplace/Iterator+Process+Tool
 
 # Getting Help
 
