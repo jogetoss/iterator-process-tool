@@ -11,7 +11,6 @@ import org.joget.apps.app.service.AppPluginUtil;
 import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
-import org.joget.apps.datalist.model.DataListCollection;
 import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.PluginThread;
 import org.joget.plugin.base.ApplicationPlugin;
@@ -32,7 +31,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.1";
+        return "7.0.2";
     }
 
     @Override
@@ -140,12 +139,16 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                     public void run() {
                         AppUtil.setCurrentAppDefinition(appDef);
                         
-                        //attempt to set mock assignment - works when recordId is activityId
+                        //note: we do not use wfAssignment from the main context. we use recordId as the context.
                         WorkflowAssignment assignment;
-                        if(wfAssignment == null){
-                            assignment = workflowManager.getMockAssignment(recordId);
-                        }else{
-                            assignment =  wfAssignment;
+                        
+                        //attempt to set mock assignment - works when recordId is activityId
+                        assignment = workflowManager.getMockAssignment(recordId);
+                        
+                        //if assignment is not available, create a new one for the purpose of retrieving primary key
+                        if(assignment == null){
+                            assignment = new WorkflowAssignment();
+                            assignment.setProcessId(recordId);
                         }
                         
                         //fire plugins one by one per record

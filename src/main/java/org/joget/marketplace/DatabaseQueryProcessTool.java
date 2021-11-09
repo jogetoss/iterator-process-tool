@@ -70,7 +70,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getVersion() {
-        return "7.0.1";
+        return "7.0.2";
     }
 
     public String getDescription() {
