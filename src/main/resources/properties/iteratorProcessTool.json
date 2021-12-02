@@ -102,14 +102,9 @@
             "name" : "delay",
             "label" : "@@org.joget.marketplace.IteratorProcessTool.delayBetweenExecution@@",
             "description" : "@@org.joget.marketplace.IteratorProcessTool.delayBetweenExecution.desc@@",
-            "type" : "selectbox",
-            "options" : [{
-                "value" : "false",
-                "label" : "False"
-            },{
-                "value" : "true",
-                "label" : "True"
-            }]
+            "type" : "textfield",
+            "value" : "0"
+            
         }
     ]
 }

@@ -9,6 +9,18 @@
         "mode" : "sql",
         "required" : "True",
         "description" : "@@org.joget.marketplace.DatabaseQueryProcessTool.config.query.desc@@"
+      },
+      {
+            "name" : "debug",
+            "label" : "@@app.jsontool.debugMode@@",
+            "type" : "selectbox",
+            "options" : [{
+                "value" : "false",
+                "label" : "False"
+            },{
+                "value" : "true",
+                "label" : "True"
+            }]
       }
     ]
   }

@@ -22,6 +22,11 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
         Connection con = null;
         PreparedStatement stmt = null;
         String query = (String) props.get("query");
+        boolean debugMode = Boolean.parseBoolean((String)props.get("debug"));
+        
+        if(debugMode){
+            LogUtil.info(getClass().getName(), "Query: " + query);
+        }
         
         Collection rows = new ArrayList();
         
@@ -62,6 +67,11 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
 
             }
         }
+        
+        if(debugMode){
+            LogUtil.info(getClass().getName(), "Rows returned: " + rows);
+        }
+        
         return rows;
     }
 
@@ -70,7 +80,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getVersion() {
-        return "7.0.2";
+        return "7.0.3";
     }
 
     public String getDescription() {

@@ -31,7 +31,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.2";
+        return "7.0.3";
     }
 
     @Override
@@ -62,8 +62,19 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
     @Override
     public Object execute(final Map properties) {
         final String processToolPropertyName = "executeProcessTool";
-        final boolean debugMode = Boolean.parseBoolean((String)properties.get("debug"));
-        final boolean delay = Boolean.parseBoolean((String)properties.get("delay"));
+        final String delayString = (String)properties.get("delay");
+
+        int delayInt = 0;
+        if(delayString.equalsIgnoreCase("true")){
+            delayInt = 1;
+        }else if(delayString.equalsIgnoreCase("false")){
+            delayInt = 0;
+        }else{
+            delayInt = Integer.parseInt(delayString);
+        }
+
+        final int delay = delayInt;
+        
         final PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
         final WorkflowManager workflowManager = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
         final AppService appService = (AppService) AppUtil.getApplicationContext().getBean("appService");
@@ -79,9 +90,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
         
         Collection recordIds = new ArrayList();
         
-        if(debugMode){
-            LogUtil.debug(getClass().getName(), "Executing Iterator");
-        }
+        debug(properties, getClass().getName(), "Executing Iterator");
         
         //get iterator
         String iteratorMethod = (String)properties.get("iteratorMethod");
@@ -117,9 +126,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
             
         }
 
-        if(debugMode){
-            LogUtil.debug(getClass().getName(), "Iterator returned: " + recordIds.size() + " items: " + recordIds.toString());
-        }
+        debug(properties, getClass().getName(), "Iterator returned: " + recordIds.size() + " items: " + recordIds.toString());
         
         //iterate thru activity assignment records one by one
         int recordCount = 0;
@@ -130,9 +137,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
             final String recordId = (String)recordIdMap.get(columnId);
             final DataList dl = datalist;
             
-            if(debugMode){
-                LogUtil.debug(getClass().getName(), "Iterating item: " + recordCount + " - Record: " + recordId);
-            }
+            debug(properties, getClass().getName(), "Iterating item: " + recordCount + " - Record: " + recordId);
             
             if (recordId != null && !recordId.isEmpty()) {
                 new PluginThread(new Runnable() {
@@ -163,16 +168,10 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                                 //obtain plugin defaults
                                 propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) appPlugin, (Map) fvMap.get("properties"), appDef, assignment));
 
-                                if(debugMode){
-                                    LogUtil.debug(getClass().getName(), "Executing tool: " + processToolPropertyName + " - " + className);
-                                }
-
                                 //replace recordID inside the plugin's properties
                                 Map propertiesMapWithRecordID = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, recordId, assignment, recordIdMap, dl);
 
-                                if(debugMode){
-                                    LogUtil.debug(getClass().getName(), "Executing tool: " + processToolPropertyName + " - " + className);
-                                }
+                                debug(properties, getClass().getName(),  "Executing tool: " + processToolPropertyName + " - " + className);
 
                                 //inject additional variables into the plugin
                                 propertiesMapWithRecordID.put("workflowAssignment", assignment);
@@ -185,17 +184,19 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
                                 Object result = appPlugin.execute(propertiesMapWithRecordID);
 
-                                if(debugMode){
+                                //if(debugMode){
                                     if(result!=null){
-                                        LogUtil.debug(getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className + " - " + result.toString());
+                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className + " - " + result.toString());
+                                        //LogUtil.debug(getClass().getName(), 
                                     }else{
-                                        LogUtil.debug(getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
+                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
+                                        //LogUtil.debug(getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
                                     }
-                                }
+                                //}
 
-                                if(delay){
+                                if(delay > 0){
                                     try {
-                                        Thread.sleep(1000);
+                                        Thread.sleep(delay * 1000);
                                     } catch (InterruptedException ex) {
                                         Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
                                     }
@@ -205,21 +206,25 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                     }
                 }).start();
 
-                if(delay){
-                    try {
-                        Thread.sleep(1000);
+                if(delay != 0){
+                    try{
+                        Thread.sleep(delay * 1000);
                     } catch (InterruptedException ex) {
                         Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
             }
-
-            if(debugMode){
-                LogUtil.debug(getClass().getName(), "Finished item " + recordCount + " - Record: " + recordId);
-            }
+            
+            debug(properties, getClass().getName(), "Finished item " + recordCount + " - Record: " + recordId);
+            
         }
         return null;
     }
- 
+    
+    public static void debug(Map properties, String className, String message) {
+        if (properties.get("debug") != null && "true".equals(properties.get("debug").toString())) {
+            LogUtil.info(className, message);
+        }
+    }
     
 }
