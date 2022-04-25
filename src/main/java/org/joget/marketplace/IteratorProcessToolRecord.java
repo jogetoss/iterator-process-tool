@@ -8,11 +8,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppPluginUtil;
-import org.joget.apps.app.service.AppService;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.apps.datalist.model.DataList;
 import org.joget.commons.util.LogUtil;
-import org.joget.commons.util.PluginThread;
 import org.joget.plugin.base.ApplicationPlugin;
 import org.joget.plugin.base.DefaultApplicationPlugin;
 import org.joget.plugin.base.Plugin;
@@ -22,7 +20,7 @@ import org.joget.workflow.model.WorkflowAssignment;
 import org.joget.workflow.model.service.WorkflowManager;
 
 public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
-    private final static String MESSAGE_PATH = "messages/iteratorProcessTool";
+    private static String MESSAGE_PATH = "messages/iteratorProcessTool";
     
     @Override
     public String getName() {
@@ -31,7 +29,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.3";
+        return "7.0.4";
     }
 
     @Override
@@ -60,9 +58,9 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
     }
 
     @Override
-    public Object execute(final Map properties) {
-        final String processToolPropertyName = "executeProcessTool";
-        final String delayString = (String)properties.get("delay");
+    public Object execute(Map properties) {
+        String processToolPropertyName = "executeProcessTool";
+        String delayString = (String)properties.get("delay");
 
         int delayInt = 0;
         if(delayString.equalsIgnoreCase("true")){
@@ -73,13 +71,11 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
             delayInt = Integer.parseInt(delayString);
         }
 
-        final int delay = delayInt;
+        int delay = delayInt;
         
-        final PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
-        final WorkflowManager workflowManager = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
-        final AppService appService = (AppService) AppUtil.getApplicationContext().getBean("appService");
-        final WorkflowAssignment wfAssignment = (WorkflowAssignment) properties.get("workflowAssignment");
-        final AppDefinition appDef = (AppDefinition) properties.get("appDef");
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        WorkflowManager workflowManager = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
+        AppDefinition appDef = (AppDefinition) properties.get("appDef");
         String columnId = getPropertyString("iteratorColumnId");
         
         if(columnId.isEmpty()){
@@ -87,7 +83,6 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
         }
         
         DataList datalist = null;
-        
         Collection recordIds = new ArrayList();
         
         debug(properties, getClass().getName(), "Executing Iterator");
@@ -125,99 +120,81 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
             }
             
         }
-
+        
         debug(properties, getClass().getName(), "Iterator returned: " + recordIds.size() + " items: " + recordIds.toString());
         
         //iterate thru activity assignment records one by one
         int recordCount = 0;
         for(Object recordIdObj : recordIds){
             recordCount++;
-            
-            final Map recordIdMap = (Map)recordIdObj;
-            final String recordId = (String)recordIdMap.get(columnId);
-            final DataList dl = datalist;
-            
-            debug(properties, getClass().getName(), "Iterating item: " + recordCount + " - Record: " + recordId);
-            
-            if (recordId != null && !recordId.isEmpty()) {
-                new PluginThread(new Runnable() {
-                    public void run() {
-                        AppUtil.setCurrentAppDefinition(appDef);
-                        
-                        //note: we do not use wfAssignment from the main context. we use recordId as the context.
-                        WorkflowAssignment assignment;
-                        
-                        //attempt to set mock assignment - works when recordId is activityId
-                        assignment = workflowManager.getMockAssignment(recordId);
-                        
-                        //if assignment is not available, create a new one for the purpose of retrieving primary key
-                        if(assignment == null){
-                            assignment = new WorkflowAssignment();
-                            assignment.setProcessId(recordId);
+
+            Map recordIdMap = (Map)recordIdObj;
+            String recordId = (String)recordIdMap.get(columnId);
+
+            debug(properties, getClass().getName(), "Iterating Item [" + recordCount + "] - Record [" + recordId + "]");
+
+            if (recordId != null && !recordId.isEmpty()){
+                AppUtil.setCurrentAppDefinition(appDef);
+
+                //note: we do not use wfAssignment from the main context. we use recordId as the context.
+                WorkflowAssignment assignment;
+
+                //attempt to set mock assignment - works when recordId is activityId
+                assignment = workflowManager.getMockAssignment(recordId);
+
+                //if assignment is not available, create a new one for the purpose of retrieving primary key
+                if(assignment == null){
+                    assignment = new WorkflowAssignment();
+                    assignment.setProcessId(recordId);
+                }
+
+                //trigger plugin
+                Object objProcessTool = properties.get(processToolPropertyName);
+                if (objProcessTool != null && objProcessTool instanceof Map) {
+                    Map fvMap = (Map) objProcessTool;
+                    if (fvMap != null && fvMap.containsKey("className") && !fvMap.get("className").toString().isEmpty()) {
+                        String className = fvMap.get("className").toString();
+                        ApplicationPlugin appPlugin = (ApplicationPlugin)pluginManager.getPlugin(className);
+                        Map propertiesMap = (Map) fvMap.get("properties");
+
+                        //obtain plugin defaults
+                        propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) appPlugin, (Map) fvMap.get("properties"), appDef, assignment));
+
+                        //replace recordID inside the plugin's properties
+                        Map propertiesMapWithRecordID = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, recordId, assignment, recordIdMap, datalist);
+
+                        debug(properties, getClass().getName(),  "Executing tool [" + processToolPropertyName + "] - [" + className + "]");
+
+                        //inject additional variables into the plugin
+                        propertiesMapWithRecordID.put("workflowAssignment", assignment);
+                        propertiesMapWithRecordID.put("appDef", appDef);
+                        propertiesMapWithRecordID.put("pluginManager", pluginManager);
+
+                        if (appPlugin instanceof PropertyEditable) {
+                            ((PropertyEditable) appPlugin).setProperties(propertiesMapWithRecordID);
                         }
-                        
-                        //fire plugins one by one per record
-                        Object objProcessTool = properties.get(processToolPropertyName);
-                        if (objProcessTool != null && objProcessTool instanceof Map) {
-                            Map fvMap = (Map) objProcessTool;
-                            if (fvMap != null && fvMap.containsKey("className") && !fvMap.get("className").toString().isEmpty()) {
-                                String className = fvMap.get("className").toString();
-                                ApplicationPlugin appPlugin = (ApplicationPlugin)pluginManager.getPlugin(className);
-                                Map propertiesMap = (Map) fvMap.get("properties");
 
-                                //obtain plugin defaults
-                                propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) appPlugin, (Map) fvMap.get("properties"), appDef, assignment));
+                        Object result = appPlugin.execute(propertiesMapWithRecordID);
 
-                                //replace recordID inside the plugin's properties
-                                Map propertiesMapWithRecordID = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, recordId, assignment, recordIdMap, dl);
+                        if(result!=null){
+                            debug(properties, getClass().getName(), "Executed tool [" + processToolPropertyName + "] - [" + className + "] - [" + result.toString() + "]");
+                        }else{
+                            debug(properties, getClass().getName(), "Executed tool [" + processToolPropertyName + "] - [" + className + "]");
+                        }
 
-                                debug(properties, getClass().getName(),  "Executing tool: " + processToolPropertyName + " - " + className);
-
-                                //inject additional variables into the plugin
-                                propertiesMapWithRecordID.put("workflowAssignment", assignment);
-                                propertiesMapWithRecordID.put("appDef", appDef);
-                                propertiesMapWithRecordID.put("pluginManager", pluginManager);
-
-                                if (appPlugin instanceof PropertyEditable) {
-                                    ((PropertyEditable) appPlugin).setProperties(propertiesMapWithRecordID);
-                                }
-
-                                Object result = appPlugin.execute(propertiesMapWithRecordID);
-
-                                //if(debugMode){
-                                    if(result!=null){
-                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className + " - " + result.toString());
-                                        //LogUtil.debug(getClass().getName(), 
-                                    }else{
-                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
-                                        //LogUtil.debug(getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
-                                    }
-                                //}
-
-                                if(delay > 0){
-                                    try {
-                                        Thread.sleep(delay * 1000);
-                                    } catch (InterruptedException ex) {
-                                        Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
-                                    }
-                                }
+                        if(delay > 0){
+                            try {
+                                Thread.sleep(delay * 1000);
+                            } catch (InterruptedException ex) {
+                                Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
                             }
                         }
                     }
-                }).start();
-
-                if(delay != 0){
-                    try{
-                        Thread.sleep(delay * 1000);
-                    } catch (InterruptedException ex) {
-                        Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
-                    }
                 }
             }
-            
-            debug(properties, getClass().getName(), "Finished item " + recordCount + " - Record: " + recordId);
-            
+            debug(properties, getClass().getName(), "Finished Item [" + recordCount + "] - Record [" + recordId + "]");
         }
+                    
         return null;
     }
     

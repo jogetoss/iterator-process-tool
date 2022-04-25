@@ -20,7 +20,7 @@ import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListColumn;
 import org.joget.apps.datalist.service.DataListService;
 import org.joget.commons.util.LogUtil;
-import org.joget.commons.util.PluginThread;
+import org.joget.directory.model.User;
 import org.joget.plugin.base.ApplicationPlugin;
 import org.joget.plugin.base.DefaultApplicationPlugin;
 import org.joget.plugin.base.Plugin;
@@ -37,7 +37,7 @@ import org.json.JSONObject;
 import org.springframework.context.ApplicationContext;
 
 public class IteratorProcessTool extends DefaultApplicationPlugin implements PluginWebSupport{
-    private final static String MESSAGE_PATH = "messages/iteratorProcessTool";
+    private static String MESSAGE_PATH = "messages/iteratorProcessTool";
     
     @Override
     public String getName() {
@@ -46,7 +46,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
 
     @Override
     public String getVersion() {
-        return "7.0.3";
+        return "7.0.4";
     }
 
     @Override
@@ -75,9 +75,11 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
     }
 
     @Override
-    public Object execute(final Map properties) {
-        final String processToolPropertyName = "executeProcessTool";
-        final String delayString = (String)properties.get("delay");
+    public Object execute(Map properties) {
+        WorkflowUserManager workflowUserManager = (WorkflowUserManager) AppUtil.getApplicationContext().getBean("workflowUserManager");
+        
+        String processToolPropertyName = "executeProcessTool";
+        String delayString = (String)properties.get("delay");
         
         int delayInt = 0;
         if(delayString.equalsIgnoreCase("true")){
@@ -88,11 +90,11 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
             delayInt = Integer.parseInt(delayString);
         }
         
-        final int delay = delayInt;
+        int delay = delayInt;
         
-        final PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
-        final WorkflowManager workflowManager = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
-        final AppService appService = (AppService) AppUtil.getApplicationContext().getBean("appService");
+        PluginManager pluginManager = (PluginManager) AppUtil.getApplicationContext().getBean("pluginManager");
+        WorkflowManager workflowManager = (WorkflowManager) AppUtil.getApplicationContext().getBean("workflowManager");
+        AppService appService = (AppService) AppUtil.getApplicationContext().getBean("appService");
         Collection iteratorRecords = new ArrayList();
         DataList datalist = null;
         String columnId = getPropertyString("iteratorColumnId");
@@ -137,108 +139,110 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
             
         }
         
-        debug(properties, getClass().getName(), "Iterator returned: " + iteratorRecords.size() + " items: " + iteratorRecords.toString());
+        debug(properties, getClass().getName(), "Iterator returned: " + iteratorRecords.size() + " Items: " + iteratorRecords.toString());
         
-        //iterate thru activity assignment records one by one
-        int recordCount = 0;
-        for(Object iteratorRecord : iteratorRecords){
-            
-            recordCount++;
-            
-            final Map iteratorRecordMap = (Map)iteratorRecord;
-            final String activityInstanceId = (String)iteratorRecordMap.get(columnId);
-            final DataList dl = datalist;
-            
-            debug(properties, getClass().getName(), "Iterating item: " + recordCount + " - activity: " + activityInstanceId);
-            
-            if (activityInstanceId != null && !activityInstanceId.isEmpty()) {
-                WorkflowActivity wfActivity = workflowManager.getActivityById(activityInstanceId);
-                
-                if(wfActivity == null){
-                    debug(properties, getClass().getName(), "No activity found for activity: " + activityInstanceId);
-                    continue;
-                }
-                
-                Collection assignees = workflowManager.getAssignmentResourceIds(wfActivity.getProcessDefId(), wfActivity.getProcessId(), activityInstanceId);
-                
-                if(assignees == null || assignees.isEmpty()){
-                    debug(properties, getClass().getName(), "Assignee not found for activity: " + activityInstanceId);
-                    continue;
-                }
-                
-                debug(properties, getClass().getName(), "Found " + assignees.size() + " assignees: " + assignees.toString());
-                
-                for(Object assigneeObj : assignees){
-                    
-                    final String assignee = (String)assigneeObj;
-                    
-                    debug(properties, getClass().getName(),  "Iterating assignee: " + assignee);
-                    
-                    new PluginThread(new Runnable() {
-                        public void run() {
-                            AppDefinition appDef = appService.getAppDefinitionForWorkflowActivity(activityInstanceId);
-                            AppUtil.setCurrentAppDefinition(appDef);
-                            WorkflowUserManager workflowUserManager = (WorkflowUserManager) AppUtil.getApplicationContext().getBean("workflowUserManager");
-                            workflowUserManager.setCurrentThreadUser(assignee);
-                            WorkflowAssignment assignment = workflowManager.getAssignment(activityInstanceId);
-                            
-                            //fire plugins one by one per acitivity per assignee by passing in activity and username into them
-                            Object objProcessTool = properties.get(processToolPropertyName);
-                            if (objProcessTool != null && objProcessTool instanceof Map) {
-                                Map fvMap = (Map) objProcessTool;
-                                if (fvMap != null && fvMap.containsKey("className") && !fvMap.get("className").toString().isEmpty()) {
-                                    String className = fvMap.get("className").toString();
-                                    ApplicationPlugin appPlugin = (ApplicationPlugin)pluginManager.getPlugin(className);
-                                    Map propertiesMap = (Map) fvMap.get("properties");
+        User currentUser = workflowUserManager.getCurrentUser();
+        AppDefinition currentAppDef = AppUtil.getCurrentAppDefinition();
+        
+        try{
+            //iterate thru activity assignment records one by one
+            int recordCount = 0;
+            for(Object iteratorRecord : iteratorRecords){
 
-                                    //obtain plugin defaults
-                                    propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) appPlugin, (Map) fvMap.get("properties"), appDef, assignment));
+                recordCount++;
 
-                                    debug(properties, getClass().getName(), "Executing tool: " + processToolPropertyName + " - " + className);
+                String activityInstanceId = (String)((Map)iteratorRecord).get(columnId);
 
-                                    //replace recordID inside the plugin's properties
-                                    Map propertiesMapWithHashParsed = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, "", assignment, iteratorRecordMap, dl);
+                debug(properties, getClass().getName(), "Iterating Item [" + recordCount + "] - Activity [" + activityInstanceId + "]");
 
-                                    //inject additional variables into the plugin
-                                    propertiesMapWithHashParsed.put("workflowAssignment", assignment);
-                                    propertiesMapWithHashParsed.put("appDef", appDef);
-                                    propertiesMapWithHashParsed.put("pluginManager", pluginManager);
-                                    //propertiesMap.put("assignee", assignee);
+                if (activityInstanceId != null && !activityInstanceId.isEmpty()) {
+                    WorkflowActivity wfActivity = workflowManager.getActivityById(activityInstanceId);
 
-                                    if (appPlugin instanceof PropertyEditable) {
-                                        ((PropertyEditable) appPlugin).setProperties(propertiesMapWithHashParsed);
-                                    }
+                    if(wfActivity == null){
+                        debug(properties, getClass().getName(), "No activity found for Activity [" + activityInstanceId + "]");
+                        continue;
+                    }
 
+                    Collection assignees = workflowManager.getAssignmentResourceIds(wfActivity.getProcessDefId(), wfActivity.getProcessId(), activityInstanceId);
+
+                    if(assignees == null || assignees.isEmpty()){
+                        debug(properties, getClass().getName(), "Assignee not found for Activity [" + activityInstanceId + "]");
+                        continue;
+                    }
+
+                    debug(properties, getClass().getName(), "Found [" + assignees.size() + "] - Assignees [" + assignees.toString() + "]");
+
+                    for(Object assigneeObj : assignees){
+                        String assignee = (String)assigneeObj;
+                        debug(properties, getClass().getName(),  "Iterating Assignee [" + assignee + "]");
+
+                        //trigger plugin per acitivity per assignee by passing in activity and username into them
+                        AppDefinition appDef = appService.getAppDefinitionForWorkflowActivity(activityInstanceId);
+                        AppUtil.setCurrentAppDefinition(appDef);
+
+                        workflowUserManager.setCurrentThreadUser(assignee);
+                        WorkflowAssignment assignment = workflowManager.getAssignment(activityInstanceId);
+
+
+                        Object objProcessTool = properties.get(processToolPropertyName);
+                        if (objProcessTool != null && objProcessTool instanceof Map) {
+                            Map fvMap = (Map) objProcessTool;
+                            if (fvMap != null && fvMap.containsKey("className") && !fvMap.get("className").toString().isEmpty()) {
+                                String className = fvMap.get("className").toString();
+                                ApplicationPlugin appPlugin = (ApplicationPlugin)pluginManager.getPlugin(className);
+                                Map propertiesMap = (Map) fvMap.get("properties");
+
+                                //obtain plugin defaults
+                                propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) appPlugin, (Map) fvMap.get("properties"), appDef, assignment));
+
+                                debug(properties, getClass().getName(), "Executing Tool: " + processToolPropertyName + " - " + className);
+
+                                //replace recordID inside the plugin's properties
+                                Map propertiesMapWithHashParsed = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, "", assignment, (Map)iteratorRecord, datalist);
+
+                                //inject additional variables into the plugin
+                                propertiesMapWithHashParsed.put("workflowAssignment", assignment);
+                                propertiesMapWithHashParsed.put("appDef", appDef);
+                                propertiesMapWithHashParsed.put("pluginManager", pluginManager);
+                                //propertiesMap.put("assignee", assignee);
+
+                                if (appPlugin instanceof PropertyEditable) {
+                                    ((PropertyEditable) appPlugin).setProperties(propertiesMapWithHashParsed);
+                                }
+
+                                try{
                                     Object result = appPlugin.execute(propertiesMapWithHashParsed);
 
                                     if(result!=null){
-                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className + " - " + result.toString());
+                                        debug(properties, getClass().getName(), "Executed Tool [" + processToolPropertyName + "] - [" + className + "] - [" + result.toString() + "]");
                                     }else{
-                                        debug(properties, getClass().getName(), "Executed tool: " + processToolPropertyName + " - " + className);
+                                        debug(properties, getClass().getName(), "Executed Tool [" + processToolPropertyName + "] - [" + className + "]");
                                     }
-
+                                }catch(Exception ex){
+                                    LogUtil.error(getClass().getName(), ex, "Error Executing Tool [" + processToolPropertyName + "]");
                                 }
                             }
                         }
-                    }).start();
-                    
-                    if(delay > 0){
-                        try {
-                            Thread.sleep(delay * 1000);
-                        } catch (InterruptedException ex) {
-                            Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
+
+                        if(delay > 0){
+                            try {
+                                Thread.sleep(delay * 1000);
+                            } catch (InterruptedException ex) {
+                                Logger.getLogger(IteratorProcessTool.class.getName()).log(Level.SEVERE, null, ex);
+                            }
                         }
+                        debug(properties, getClass().getName(), "Finished Assignee [" + assignee + "]");
                     }
-                    debug(properties, getClass().getName(), "Finished assignee: " + assignee);
-                    
+                    debug(properties, getClass().getName(), "Finished Item [" + recordCount + "] - Activity [" + activityInstanceId + "]");
                 }
-            
-                debug(properties, getClass().getName(), "Finished item " + recordCount + " - Activity: " + activityInstanceId);
-             
+                
+                debug(properties, getClass().getName(), "Finished iterating Item [" + recordCount + "] - Activity [" + activityInstanceId + "]");
             }
-            
-            debug(properties, getClass().getName(), "Finished iterating item " + recordCount + " - Activity: " + activityInstanceId);
+        }finally{
+            workflowUserManager.setCurrentThreadUser(currentUser);
+            AppUtil.setCurrentAppDefinition(currentAppDef);
         }
+        
         return null;
     }
     
