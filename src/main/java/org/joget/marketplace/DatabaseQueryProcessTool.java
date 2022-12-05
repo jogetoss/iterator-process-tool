@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import javax.sql.DataSource;
+import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppPluginUtil;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.commons.util.LogUtil;
@@ -88,7 +89,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getLabel() {
-        return "Database Query Process Tool";
+        return AppPluginUtil.getMessage("org.joget.marketplace.DatabaseQueryProcessTool", getClassName(), MESSAGE_PATH);
     }
 
     public String getClassName() {
@@ -96,6 +97,11 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getPropertyOptions() {
-        return AppUtil.readPluginResource(getClass().getName(), "/properties/databaseQueryProcessTool.json", null, true, "/messages/databaseQueryProcessTool"); 
+        AppDefinition appDef = AppUtil.getCurrentAppDefinition();
+        String appId = appDef.getId();
+        String appVersion = appDef.getVersion().toString();
+        Object[] arguments = new Object[]{getLabel(), appId, appVersion};
+        String json = AppUtil.readPluginResource(getClass().getName(), "/properties/databaseQueryProcessTool.json", arguments, true, MESSAGE_PATH);
+        return json;
     }
 }

@@ -87,24 +87,24 @@
             "type" : "header"
         },
         {
-            "name" : "debug",
-            "label" : "@@app.jsontool.debugMode@@",
-            "type" : "selectbox",
-            "options" : [{
-                "value" : "false",
-                "label" : "False"
-            },{
-                "value" : "true",
-                "label" : "True"
-            }]
+            "name":"debugMode",
+            "label":"@@app.jsontool.debugMode@@",
+            "description":"@@app.jsontool.debugMode.desc@@",
+            "type":"checkbox",
+            "options":[
+               {
+                  "value":"true",
+                  "label":""
+               }
+            ]
         },
         {
             "name" : "delay",
             "label" : "@@org.joget.marketplace.IteratorProcessTool.delayBetweenExecution@@",
             "description" : "@@org.joget.marketplace.IteratorProcessTool.delayBetweenExecution.desc@@",
             "type" : "textfield",
-            "value" : "0"
-            
+            "value" : "0",
+            "required" : "true"
         }
     ]
 }

@@ -1,6 +1,6 @@
 [
   {
-    "title": "@@org.joget.marketplace.DatabaseQueryProcessTool.config@@",
+    "title": "%s",
     "properties": [
       {
         "name": "query",
@@ -11,16 +11,16 @@
         "description" : "@@org.joget.marketplace.DatabaseQueryProcessTool.config.query.desc@@"
       },
       {
-            "name" : "debug",
-            "label" : "@@app.jsontool.debugMode@@",
-            "type" : "selectbox",
-            "options" : [{
-                "value" : "false",
-                "label" : "False"
-            },{
-                "value" : "true",
-                "label" : "True"
-            }]
+          "name":"debugMode",
+          "label":"@@app.jsontool.debugMode@@",
+          "description":"@@app.jsontool.debugMode.desc@@",
+          "type":"checkbox",
+          "options":[
+             {
+                "value":"true",
+                "label":""
+             }
+          ]
       }
     ]
   }
