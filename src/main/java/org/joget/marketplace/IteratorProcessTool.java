@@ -46,7 +46,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
 
     @Override
     public String getVersion() {
-        return "7.0.4";
+        return "7.0.5";
     }
 
     @Override
@@ -144,9 +144,10 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
         User currentUser = workflowUserManager.getCurrentUser();
         AppDefinition currentAppDef = AppUtil.getCurrentAppDefinition();
         
+        int recordCount = 0;
+        
         try{
             //iterate thru activity assignment records one by one
-            int recordCount = 0;
             for(Object iteratorRecord : iteratorRecords){
 
                 recordCount++;
@@ -201,6 +202,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
                                 Map propertiesMapWithHashParsed = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, "", assignment, (Map)iteratorRecord, datalist);
 
                                 //inject additional variables into the plugin
+                                propertiesMapWithHashParsed.put("data", iteratorRecord);
                                 propertiesMapWithHashParsed.put("workflowAssignment", assignment);
                                 propertiesMapWithHashParsed.put("appDef", appDef);
                                 propertiesMapWithHashParsed.put("pluginManager", pluginManager);
@@ -238,6 +240,8 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
                 
                 debug(properties, getClass().getName(), "Finished iterating Item [" + recordCount + "] - Activity [" + activityInstanceId + "]");
             }
+        }catch(Exception ex){
+            LogUtil.error(getClass().getName(), ex, "Error on Item [" + recordCount + "]");
         }finally{
             workflowUserManager.setCurrentThreadUser(currentUser);
             AppUtil.setCurrentAppDefinition(currentAppDef);

@@ -29,7 +29,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.4";
+        return "7.0.5";
     }
 
     @Override
@@ -166,6 +166,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                         debug(properties, getClass().getName(),  "Executing tool [" + processToolPropertyName + "] - [" + className + "]");
 
                         //inject additional variables into the plugin
+                        propertiesMapWithRecordID.put("data", recordIdMap);
                         propertiesMapWithRecordID.put("workflowAssignment", assignment);
                         propertiesMapWithRecordID.put("appDef", appDef);
                         propertiesMapWithRecordID.put("pluginManager", pluginManager);
@@ -194,7 +195,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
             }
             debug(properties, getClass().getName(), "Finished Item [" + recordCount + "] - Record [" + recordId + "]");
         }
-                    
+        
         return null;
     }
     
