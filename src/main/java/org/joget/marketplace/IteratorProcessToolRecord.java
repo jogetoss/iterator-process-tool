@@ -29,7 +29,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.5";
+        return "7.0.6";
     }
 
     @Override
@@ -101,7 +101,9 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                     //obtain plugin defaults
                     Map propertiesMap = new HashMap();
                     propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) iteratorPlugin, (Map) fvMap.get("properties"), null, null));
-
+                    
+                    propertiesMap = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, null, null, null, null);
+                    
                     if (iteratorPlugin instanceof PropertyEditable) {
                         ((PropertyEditable) iteratorPlugin).setProperties(propertiesMap);
                     }

@@ -23,7 +23,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
         Connection con = null;
         PreparedStatement stmt = null;
         String query = (String) props.get("query");
-        boolean debugMode = Boolean.parseBoolean((String)props.get("debug"));
+        boolean debugMode = Boolean.parseBoolean((String)props.get("debugMode"));
         
         if(debugMode){
             LogUtil.info(getClass().getName(), "Query: " + query);
@@ -81,7 +81,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getVersion() {
-        return "7.0.4";
+        return "7.0.6";
     }
 
     public String getDescription() {

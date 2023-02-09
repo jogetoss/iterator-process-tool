@@ -46,7 +46,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
 
     @Override
     public String getVersion() {
-        return "7.0.5";
+        return "7.0.6";
     }
 
     @Override
@@ -77,6 +77,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
     @Override
     public Object execute(Map properties) {
         WorkflowUserManager workflowUserManager = (WorkflowUserManager) AppUtil.getApplicationContext().getBean("workflowUserManager");
+        WorkflowAssignment wfAssignment = (WorkflowAssignment) properties.get("workflowAssignment");
         
         String processToolPropertyName = "executeProcessTool";
         String delayString = (String)properties.get("delay");
@@ -120,6 +121,8 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
                     Map propertiesMap = new HashMap();
                     propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) iteratorPlugin, (Map) fvMap.get("properties"), null, null));
 
+                    propertiesMap = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, null, wfAssignment, null, null);
+                    
                     if (iteratorPlugin instanceof PropertyEditable) {
                         ((PropertyEditable) iteratorPlugin).setProperties(propertiesMap);
                     }
