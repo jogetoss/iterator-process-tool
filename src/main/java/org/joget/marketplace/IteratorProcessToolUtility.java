@@ -14,6 +14,7 @@ import org.joget.apps.datalist.model.DataList;
 import org.joget.apps.datalist.model.DataListColumn;
 import org.joget.apps.datalist.model.DataListColumnFormat;
 import org.joget.apps.datalist.service.DataListService;
+import org.joget.commons.util.LogUtil;
 import org.joget.commons.util.StringUtil;
 import org.joget.workflow.model.WorkflowAssignment;
 import org.springframework.beans.BeansException;
@@ -65,12 +66,16 @@ public class IteratorProcessToolUtility {
         
         while (matcher.find()) {
             String key = matcher.group(1);
-            String value = "";
+            String value = null;
             
-            if(dataList != null){
-                value = getBinderFormattedValue(dataList, row, key);
-            }else{
-                value = (String)row.get(key);
+            try{
+                if(dataList != null){
+                    value = getBinderFormattedValue(dataList, row, key);
+                }else{
+                    value = (String)row.get(key);
+                }
+            }catch(Exception ex){
+                LogUtil.info("org.joget.marketplace.IteratorProcessToolUtility" , "Cannot get key [" + key + "]");
             }
             
             if (value != null) {
