@@ -61,7 +61,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
     public Object execute(Map properties) {
         String processToolPropertyName = "executeProcessTool";
         String delayString = (String)properties.get("delay");
-
+        
         int delayInt = 0;
         if(delayString.equalsIgnoreCase("true")){
             delayInt = 1;
@@ -102,7 +102,15 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                     Map propertiesMap = new HashMap();
                     propertiesMap.putAll(AppPluginUtil.getDefaultProperties((Plugin) iteratorPlugin, (Map) fvMap.get("properties"), null, null));
                     
-                    propertiesMap = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, null, null, null, null);
+                    WorkflowAssignment iteratorAssignment = null;
+                    if(properties.containsKey("workflowAssignment") && properties.get("workflowAssignment") != null){
+                        iteratorAssignment = (WorkflowAssignment)properties.get("workflowAssignment");
+                    }else{
+                        iteratorAssignment = new WorkflowAssignment();
+                        iteratorAssignment.setProcessId(properties.get("recordId").toString());
+                    }
+
+                    propertiesMap = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, null, iteratorAssignment, null, null);
                     
                     if (iteratorPlugin instanceof PropertyEditable) {
                         ((PropertyEditable) iteratorPlugin).setProperties(propertiesMap);
