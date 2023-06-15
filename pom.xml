@@ -4,7 +4,7 @@
     <groupId>org.joget.plugin</groupId>
     <artifactId>iterator-process-tool</artifactId>
     <packaging>bundle</packaging>
-    <version>7.0.6</version>
+    <version>7.0.7</version>
     <name>iterator-process-tool</name>
     <url>http://www.joget.org</url>
     <build>

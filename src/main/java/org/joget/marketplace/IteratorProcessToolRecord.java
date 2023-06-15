@@ -29,7 +29,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.6";
+        return "7.0.7";
     }
 
     @Override
@@ -105,9 +105,11 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
                     WorkflowAssignment iteratorAssignment = null;
                     if(properties.containsKey("workflowAssignment") && properties.get("workflowAssignment") != null){
                         iteratorAssignment = (WorkflowAssignment)properties.get("workflowAssignment");
-                    }else{
+                    }else if(properties.containsKey("recordId") && properties.get("recordId") != null){
                         iteratorAssignment = new WorkflowAssignment();
                         iteratorAssignment.setProcessId(properties.get("recordId").toString());
+                    }else{
+                        debug(properties, getClass().getName(), "Iterator found no records!");
                     }
 
                     propertiesMap = IteratorProcessToolUtility.replaceValueHashMap(propertiesMap, null, iteratorAssignment, null, null);
