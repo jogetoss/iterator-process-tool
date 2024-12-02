@@ -23,5 +23,35 @@
           ]
       }
     ]
-  }
+  },
+  {
+        "title": "@@org.joget.marketplace.DatabaseQueryProcessTool.formatResponse@@",
+        "properties": [
+            {
+                "name": "enableFormatResponse",
+                "label": "@@org.joget.marketplace.DatabaseQueryProcessTool.enableFormatResponse@@",
+                "type": "checkbox",
+                "options": [
+                    {
+                        "value": "true",
+                        "label": ""
+                    }
+                ]
+            },
+            {
+                "name": "script",
+                "label": "@@app.beanshelltool.script@@",
+                "description": "@@org.joget.marketplace.DatabaseQueryProcessTool.script.desc@@",
+                "type": "codeeditor",
+                "mode": "java",
+                "control_field": "enableFormatResponse",
+                "control_value": "true",
+                "control_use_regex": "false",
+                "value": ""
+            }
+        ],
+        "control_field": "responseType",
+        "control_value": "JSON",
+        "control_use_regex": "false"
+    }
 ]

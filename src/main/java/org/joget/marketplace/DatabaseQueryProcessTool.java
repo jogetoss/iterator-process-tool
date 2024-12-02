@@ -1,5 +1,6 @@
 package org.joget.marketplace;
 
+import bsh.Interpreter;
 import java.util.Map;
 import org.joget.plugin.base.DefaultApplicationPlugin;
 import java.sql.Connection;
@@ -14,6 +15,7 @@ import org.joget.apps.app.model.AppDefinition;
 import org.joget.apps.app.service.AppPluginUtil;
 import org.joget.apps.app.service.AppUtil;
 import org.joget.commons.util.LogUtil;
+import org.joget.workflow.util.WorkflowUtil;
 
 public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     private final static String MESSAGE_PATH = "messages/databaseQueryProcessTool";
@@ -73,6 +75,20 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
             LogUtil.info(getClass().getName(), "Rows returned: " + rows);
         }
         
+        //Added ability to format response via bean shell in configuration
+        if ("true".equalsIgnoreCase(getPropertyString("enableFormatResponse"))) {
+            props.put("data", rows);
+
+            String script = (String) props.get("script");
+
+            Map<String, String> replaceMap = new HashMap<String, String>();
+            replaceMap.put("\n", "\\\\n");
+            
+            script = WorkflowUtil.processVariable(script, "", null, "", replaceMap);
+            
+            //rows = (Collection) executeScript(script, props);
+            rows = (Collection) AppPluginUtil.executeScript(script, props);
+        }
         return rows;
     }
 
@@ -81,7 +97,7 @@ public class DatabaseQueryProcessTool extends DefaultApplicationPlugin {
     }
 
     public String getVersion() {
-        return "7.0.6";
+        return "7.0.8";
     }
 
     public String getDescription() {
