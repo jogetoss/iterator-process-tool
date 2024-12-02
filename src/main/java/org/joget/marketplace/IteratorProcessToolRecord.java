@@ -29,7 +29,7 @@ public class IteratorProcessToolRecord extends DefaultApplicationPlugin{
 
     @Override
     public String getVersion() {
-        return "7.0.7";
+        return "7.0.8";
     }
 
     @Override
