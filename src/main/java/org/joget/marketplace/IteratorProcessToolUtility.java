@@ -95,7 +95,9 @@ public class IteratorProcessToolUtility {
             if(pair.getValue() instanceof String){
                 String replacedValue = (String)pair.getValue();
                 replacedValue = replacedValue.replaceAll("\\$\\$", "#");
-                replacedValue = replacedValue.replaceAll("@recordId@", recordId);
+                if(recordId != null){
+                    replacedValue = replacedValue.replaceAll("@recordId@", recordId);
+                }
                 
                 replacedValue = replaceValueFromIteratorRecord(replacedValue, iteratorRecord, dataList);
                 
