@@ -46,7 +46,7 @@ public class IteratorProcessTool extends DefaultApplicationPlugin implements Plu
 
     @Override
     public String getVersion() {
-        return "7.0.8";
+        return "7.0.9";
     }
 
     @Override

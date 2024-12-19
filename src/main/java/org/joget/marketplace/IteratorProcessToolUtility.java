@@ -79,7 +79,7 @@ public class IteratorProcessToolUtility {
             }
             
             if (value != null) {
-                expr = expr.replaceAll(StringUtil.escapeRegex("{"+key+"}"), value);
+                expr = expr.replaceAll(StringUtil.escapeRegex("{" + key + "}"), Matcher.quoteReplacement(value));
             }
         }
         
